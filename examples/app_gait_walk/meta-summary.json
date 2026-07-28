@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "note": "Demonstration sample: a real 3-sensor capture recast to the app-gait file grammar (accel_gyro-*.csv, FILTERED). No genuine processed session was available; the gait_segments file below is an illustrative placeholder, not real analysis.",
+  "session": {
+    "activityCode": "WALK_10_METRE",
+    "sensorPlacement": "BT_IMU",
+    "startedAtMs": 1784729908097,
+    "endedAtMs": 1784729929676,
+    "durationMs": 21579
+  },
+  "sensors": [
+    { "shortMac": "78B3", "sensorLabel": "Left Foot" },
+    { "shortMac": "AE60", "sensorLabel": "Right Foot" },
+    { "shortMac": "3484", "sensorLabel": "Back" }
+  ],
+  "settings": { "sample_rate": "100" },
+  "files": [
+    { "name": "accel_gyro-filtered-78b3-left_foot.csv", "modality": "ACCEL_GYRO", "modalityLabel": "FILTERED", "shortMac": "78B3", "sensorLabel": "Left Foot", "rotationCount": 1 },
+    { "name": "accel_gyro-filtered-ae60-right_foot.csv", "modality": "ACCEL_GYRO", "modalityLabel": "FILTERED", "shortMac": "AE60", "sensorLabel": "Right Foot", "rotationCount": 1 },
+    { "name": "accel_gyro-filtered-3484-back.csv", "modality": "ACCEL_GYRO", "modalityLabel": "FILTERED", "shortMac": "3484", "sensorLabel": "Back", "rotationCount": 1 },
+    { "name": "gait_segments-postproc.csv", "modality": "GAIT_SEGMENTS", "modalityLabel": "POSTPROC", "rotationCount": 1 },
+    { "name": "meta-summary.json", "modality": "META", "modalityLabel": "SUMMARY", "rotationCount": 1 }
+  ]
+}

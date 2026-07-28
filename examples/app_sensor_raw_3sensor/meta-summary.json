@@ -1,0 +1,83 @@
+{
+    "schema_version": 1,
+    "app": {
+        "packageName": "com.lvlmotion.appsensor",
+        "versionName": "0.1.4-si",
+        "gitHash": null
+    },
+    "session": {
+        "activityCode": "BTIMU_RAW",
+        "sensorType": "BT_IMU",
+        "startedAtIso": "2026-07-20T12:12:39.713653-04:00[America/Toronto]",
+        "startedAtMs": 1784563959713,
+        "endedAtMs": 1784563972036,
+        "durationMs": 12323
+    },
+    "sensors": [
+        {
+            "shortMac": "78B3",
+            "sensorLabel": "Left Foot",
+            "transport": "PHONE_BLE"
+        },
+        {
+            "shortMac": "3484",
+            "sensorLabel": "Back",
+            "transport": "PHONE_BLE"
+        },
+        {
+            "shortMac": "AE60",
+            "sensorLabel": "Right Foot",
+            "transport": "PHONE_BLE"
+        }
+    ],
+    "transports": [
+        {
+            "type": "PHONE_BLE",
+            "id": null
+        }
+    ],
+    "settings": {},
+    "files": [
+        {
+            "name": "imu-left foot-78b3.csv",
+            "modality": "ACCEL_GYRO",
+            "modalityLabel": "RAW",
+            "shortMac": "78B3",
+            "note": null,
+            "rotationCount": 1
+        },
+        {
+            "name": "imu-back-3484.csv",
+            "modality": "ACCEL_GYRO",
+            "modalityLabel": "RAW",
+            "shortMac": "3484",
+            "note": null,
+            "rotationCount": 1
+        },
+        {
+            "name": "imu-right foot-ae60.csv",
+            "modality": "ACCEL_GYRO",
+            "modalityLabel": "RAW",
+            "shortMac": "AE60",
+            "note": null,
+            "rotationCount": 1
+        },
+        {
+            "name": "meta-data_records.csv",
+            "modality": "META",
+            "modalityLabel": "DATA_RECORDS",
+            "shortMac": null,
+            "note": null,
+            "rotationCount": 1
+        },
+        {
+            "name": "meta-summary.json",
+            "modality": "META",
+            "modalityLabel": "SUMMARY",
+            "shortMac": null,
+            "note": null,
+            "rotationCount": 1
+        }
+    ],
+    "recovery": null
+}
