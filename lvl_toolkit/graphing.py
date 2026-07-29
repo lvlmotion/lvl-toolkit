@@ -45,10 +45,11 @@ SENSOR_COLORS = {
 # IMU channel colors (x / y / z), shared by accel (solid) and gyro (dashed).
 AXIS_COLORS = {"x": "#d62728", "y": "#2ca02c", "z": "#1f77b4"}
 
-# Overlay band color, keyed by (normalized) gait-segment type. Light fill shades
-# meant to sit under the signal at low alpha. Covers the phase names (swing /
-# stance / stride) and the pipeline's stride classes (gait / straight / turn);
-# anything else falls back to DEFAULT so an unknown vocabulary still draws.
+# Overlay band color, keyed by (normalized) segment type. Light fill shades meant
+# to sit under the signal at low alpha. Covers gait-cycle phase names (swing /
+# stance / stride / gait / straight / turn) as well as TUG state-machine phases
+# (up / walk / down); anything else falls back to DEFAULT so an unknown
+# vocabulary still draws.
 SEGMENT_COLORS = {
     "swing": "#ffd27f",         # light orange
     "stance": "#a6cee3",        # light blue
@@ -58,6 +59,10 @@ SEGMENT_COLORS = {
     "turn": "#fdae6b",          # orange
     "turning": "#fdae6b",
     "discarded": "#e0e0e0",     # gray
+    "up": "#FFA500",            # orange (TUG: stand-up phase)
+    "walk": "#9370DB",          # medium purple (TUG: walking phase)
+    "down": "#A0522D",          # sienna (TUG: sit-down phase)
+    "other": "#B0B0B0",         # neutral gray (TUG: unclassified)
     "DEFAULT": "#cccccc",
 }
 
@@ -68,7 +73,7 @@ def sensor_color(label: str) -> str:
 
 
 def segment_color(segment_type: str) -> str:
-    """Band color for a gait-segment type. Normalizes case and drops any
+    """Band color for a segment type. Normalizes case and drops any
     ``":detail"`` suffix (``"discarded:terminal"`` -> ``"discarded"``); unknown
     types get the neutral DEFAULT shade."""
     key = (segment_type or "").strip().lower().split(":", 1)[0]
@@ -86,11 +91,46 @@ def time_series_grid(n: int, *, sharex: bool = True):
     return fig, [ax[0] for ax in axes]      # flatten the (n, 1) axes array
 
 
-def save_fig(fig, path, *, dpi: int = 150) -> None:
+def save_fig(fig, path, *, dpi: int = 300) -> None:
     """Tight-layout, save, and ALWAYS close the figure (no batch leaks)."""
     fig.tight_layout()
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
+
+
+# --------------------------------------------------------------------------- #
+# Shared y-axis limits (avoids a quiet/static trial looking like big movement)
+# --------------------------------------------------------------------------- #
+
+MIN_SPAN = {"accel": 30.0, "gyro": 4.0}  # m/s^2, rad/s
+
+
+def _shared_ylim(signals, prefix):
+    """One y-range across all sensors for a modality (accel or gyro), at
+    least MIN_SPAN wide. A quiet/static trial otherwise autoscales to sensor
+    noise and reads like large movement. Ignores NaN/Inf samples."""
+    import numpy as np
+    span = MIN_SPAN.get(prefix, 1.0)
+    cols = [f"{prefix}_{axis}" for axis in ("x", "y", "z")]
+    vals = []
+    for f in signals:
+        df = f.data
+        present = [c for c in cols if c in df.columns]
+        if present:
+            vals.append(df[present].to_numpy().ravel())
+    if not vals:
+        return None
+    vals = np.concatenate(vals)
+    vals = vals[np.isfinite(vals)]
+    if vals.size == 0:
+        return None
+    lo, hi = vals.min(), vals.max()
+    pad = 0.05 * (hi - lo)
+    lo, hi = lo - pad, hi + pad
+    if hi - lo < span:
+        mid = 0.5 * (hi + lo)
+        lo, hi = mid - span / 2, mid + span / 2
+    return lo, hi
 
 
 # --------------------------------------------------------------------------- #
@@ -174,6 +214,9 @@ def render_figure(spec: FigureSpec, session):
     ``layout="per_sensor"`` draws one subplot per sensor: accel (solid) and gyro
     (dashed) x/y/z, on a shared t0 time axis, with any overlay modalities shaded
     behind. Sensors are colored by placement (subplot title); channels by axis.
+    A shared y-axis range (with a minimum span) is applied across all subplots
+    so a quiet/static trial doesn't get auto-scaled into looking like large
+    movement.
     """
     signals = _signal_files(session, spec)
     overlays = _overlay_files(session, spec)
@@ -182,6 +225,18 @@ def render_figure(spec: FigureSpec, session):
     # Shared time origin across everything on this figure.
     firsts = [f.data["time"].iloc[0] for f in signals if "time" in f.data.columns and len(f.data)]
     t0 = int(min(firsts)) if firsts else 0
+
+    # Shared y-limits across all sensors on this figure (accel + gyro combined
+    # into one range per subplot, since both are plotted on the same axes).
+    accel_lim = _shared_ylim(signals, "accel")
+    gyro_lim = _shared_ylim(signals, "gyro")
+    shared_lim = None
+    if accel_lim and gyro_lim:
+        shared_lim = (min(accel_lim[0], gyro_lim[0]), max(accel_lim[1], gyro_lim[1]))
+    elif accel_lim:
+        shared_lim = accel_lim
+    elif gyro_lim:
+        shared_lim = gyro_lim
 
     fig, axes = time_series_grid(len(sensors))
     for ax, label in zip(axes, sensors):
@@ -196,6 +251,8 @@ def render_figure(spec: FigureSpec, session):
                     ax.plot(t, df[f"gyro_{axis}"], color=color, lw=0.8, ls="--", label=f"gyro_{axis}")
         for f in overlays:
             add_segment_overlays(ax, f.data, t0, restrict_to_role=role)
+        if shared_lim is not None:
+            ax.set_ylim(*shared_lim)
         ax.set_ylabel("accel / gyro")
         ax.set_title(label or "(unlabeled)", color=sensor_color(label), fontsize=10, loc="left")
     axes[-1].set_xlabel("time (s)")
@@ -217,7 +274,7 @@ def render_session(session, schema: Callable = figures_for) -> List[Tuple[Figure
 
 
 def save_session_figures(session, outdir, *, schema: Callable = figures_for,
-                         dpi: int = 150) -> List[str]:
+                         dpi: int = 300) -> List[str]:
     """Render a session and write one PNG per figure to ``outdir``. Returns the
     paths written."""
     import os
