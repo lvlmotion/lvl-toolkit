@@ -48,12 +48,19 @@ def test_imu_typed_container():
     assert dc.data_list[0].accel_y == pytest.approx(5.918339)
 
 
-def test_gait_segments_generic_dataframe():
+def test_gait_segments_loaded_as_dataframe():
     s = load_session(FIXTURE)
     seg = s.by_modality("GAIT_SEGMENTS")[0]
-    # custom schema not matching any typed container -> loaded as a DataFrame
-    assert "phase" in seg.data.columns
-    assert len(seg.data) == 4
+    # GAIT_SEGMENTS uses the SegmentDataContainer schema (start/end + type),
+    # surfaced as a generic DataFrame on .data.
+    df = seg.data
+    assert {"start_time", "end_time", "type", "notes"} <= set(df.columns)
+    assert len(df) > 0
+    # swing segments for both feet, in start-time order (matches the real
+    # timestamps of the foot IMU streams they were derived from)
+    assert set(df["notes"]) == {"LEFT_FOOT", "RIGHT_FOOT"}
+    assert (df["type"] == "swing").all()
+    assert df["start_time"].is_monotonic_increasing
 
 
 def test_meta_entry_listed_without_dataframe():

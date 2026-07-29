@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "Demonstration sample: a real 3-sensor capture recast to the app-gait file grammar (accel_gyro-*.csv, FILTERED). No genuine processed session was available; the gait_segments file below is an illustrative placeholder, not real analysis.",
+  "note": "Demonstration sample: a real 3-sensor capture recast to the app-gait file grammar (accel_gyro-*.csv, FILTERED). The gait_segments file below holds swing phases derived from the real foot gyro by a simple detection heuristic (timestamps align to the IMU streams); it is illustrative, not the production gait pipeline's output.",
   "session": {
     "activityCode": "WALK_10_METRE",
     "sensorPlacement": "BT_IMU",

@@ -31,11 +31,12 @@ Two ready-to-load sessions ship under [`examples/`](examples/), one per grammar:
 | folder | grammar | contents |
 |---|---|---|
 | `examples/app_sensor_raw_3sensor/` | `imu-*.csv` | Real app-sensor capture — 3 BT-IMU sensors (both feet + trunk "Back"), raw ACCEL_GYRO |
-| `examples/app_gait_walk/` | `accel_gyro-*.csv` | Real 10-metre-walk capture recast to the app-gait file grammar (FILTERED), plus a placeholder `GAIT_SEGMENTS` file |
+| `examples/app_gait_walk/` | `accel_gyro-*.csv` | Real 10-metre-walk capture recast to the app-gait file grammar (FILTERED), plus a `GAIT_SEGMENTS` file of swing phases derived from the real foot gyro |
 
 > `app_gait_walk` is a real 3-sensor capture renamed to the `accel_gyro-` grammar
-> to exercise that path — no genuine processed app-gait session was available, so
-> its `gait_segments` file is an illustrative placeholder, not real analysis.
+> to exercise that path. Its `gait_segments` file holds swing phases detected from
+> the real foot gyro by a simple heuristic (so the band timestamps line up with
+> the IMU streams) — illustrative, not the production gait pipeline's output.
 
 Run the bundled demo to see what the toolkit parses out of each (loads both,
 prints the session summary and a per-file table of modality / label / role):
