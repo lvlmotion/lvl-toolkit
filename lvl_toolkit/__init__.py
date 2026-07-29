@@ -20,6 +20,12 @@ from .csv_io import (
     SegmentDataContainer,
     Segment,
 )
+from .activity_map import (
+    FigureSpec,
+    figures_for,
+    PLOT_ROLES,
+    sensor_role,
+)
 
 __all__ = [
     "Session",
@@ -33,4 +39,8 @@ __all__ = [
     "JointEstimatorMode",
     "SegmentDataContainer",
     "Segment",
+    "FigureSpec",
+    "figures_for",
+    "PLOT_ROLES",
+    "sensor_role",
 ]
