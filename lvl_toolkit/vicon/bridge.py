@@ -41,6 +41,14 @@ except ImportError:
     ViconDataStream = None  # type: ignore
 
 
+# ── Rig settings — edit these for your lab (or override per-run with the CLI flags) ──
+# Vicon DataStream server the bridge connects to, as "host:port".
+DEFAULT_VICON_HOST = "localhost:801"
+# Base folder session output lands under. None -> <Desktop>/lvl_vicon (per-OS).
+# Set to an absolute path (e.g. r"D:\lvl_vicon") to pin it somewhere explicit.
+DEFAULT_OUTPUT_ROOT = None
+
+
 CSV_HEADER = [
     "frame",
     "viconpc_ts_ns",
@@ -58,8 +66,13 @@ def auto_session_id() -> str:
 
 
 def default_output_dir(session_id: str) -> Path:
-    """Mirror clock_sync.py's convention: <desktop>/lvl_vicon/<session>/."""
-    if os.name == "nt":
+    """Session folder under the rig's output root: <root>/lvl_vicon/<session>/.
+
+    Uses DEFAULT_OUTPUT_ROOT when set, else <Desktop>/lvl_vicon (per-OS).
+    """
+    if DEFAULT_OUTPUT_ROOT is not None:
+        base = Path(DEFAULT_OUTPUT_ROOT) / "lvl_vicon"
+    elif os.name == "nt":
         base = Path(os.environ.get("USERPROFILE", str(Path.home()))) / "Desktop" / "lvl_vicon"
     else:
         base = Path.home() / "Desktop" / "lvl_vicon"
@@ -128,8 +141,8 @@ def main():
     parser = argparse.ArgumentParser(description="Stream Vicon frames to a CSV.")
     parser.add_argument(
         "--host",
-        default="localhost:801",
-        help="DataStream server (default: localhost:801).",
+        default=DEFAULT_VICON_HOST,
+        help=f"DataStream server (default: {DEFAULT_VICON_HOST}).",
     )
     parser.add_argument(
         "--session-id",
