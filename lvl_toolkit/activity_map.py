@@ -29,16 +29,42 @@ So a TUG feet+lumbar session -> ``raw_all`` + ``feet`` + ``lumbar`` (3 figures);
 a raw app-sensor folder -> ``raw_all`` (1 figure). No straight/turn overlay and
 no lumbar-sway view yet -- those are intentionally out of scope for this version.
 
-Typical use::
+Typical use (default schema, out of the box)::
 
-    from lvl_toolkit import load_session, figures_for
+    from lvl_toolkit import load_session
+    from lvl_toolkit.graphing import render_session
 
     session = load_session(folder)
-    for fig in figures_for(session):
-        # Draw fig.signal_modalities files (filtered to fig.sensors) as
-        # time-series and overlay fig.overlay_modalities as bands. You own the
-        # axes, the colors, and the shading; the schema owns the plan.
-        ...
+    render_session(session)             # uses figures_for below -- just works
+
+
+Write your own schema
+---------------------
+This file is meant to be **copied and modified**. A schema is nothing but a
+function ``session -> list[FigureSpec]``; the renderer takes any such function
+via ``schema=``, so you reuse the whole grapher (colors, overlays, layout) and
+only decide *which* figures appear. To make a custom view, copy
+:func:`figures_for`, change the rules, and pass it in::
+
+    from lvl_toolkit.activity_map import FigureSpec, RAW_IMU_MODALITIES
+    from lvl_toolkit.graphing import render_session
+
+    def my_figures_for(session):
+        # Always show raw IMU for every sensor...
+        figs = [FigureSpec("raw_all", "Raw IMU (all sensors)", RAW_IMU_MODALITIES)]
+        # ...plus a lumbar subplot for *any* session that has one (my rule).
+        lumbar = next((l for l in session.sensor_labels() if _is_lumbar(l)), None)
+        if lumbar:
+            figs.append(FigureSpec("lumbar", "Lumbar", RAW_IMU_MODALITIES, sensors=[lumbar]))
+        return figs
+
+    render_session(session, schema=my_figures_for)
+
+A ``FigureSpec`` has five fields (see the class) -- ``role``, ``title``,
+``signal_modalities`` (drawn as time-series), and the optional ``overlay_modalities``
+(drawn as bands), ``sensors`` (which labels; ``None`` = all), ``layout``. That's
+the whole contract. Add a figure by appending one ``FigureSpec``; remove one by
+not appending it. No renderer changes needed.
 """
 
 from dataclasses import dataclass
@@ -176,21 +202,29 @@ def figures_for(session: "Session") -> List[FigureSpec]:
     ``is_processed`` guard below to ``True`` if you want a lumbar subplot for raw
     captures too.
     """
+    # Facts about this session that the rules below switch on. Add your own
+    # here (e.g. a sensor count, a settings flag) if a custom figure needs it.
     labels = session.sensor_labels()
     is_processed = session.source == "app-gait"
     has_gait_segments = any(f.modality == GAIT_SEGMENTS_MODALITY for f in session.files)
-
-    figures: List[FigureSpec] = [
-        FigureSpec(
-            role=ROLE_RAW_ALL,
-            title="Raw IMU (all sensors)",
-            signal_modalities=RAW_IMU_MODALITIES,
-            sensors=None,
-        )
-    ]
-
     left = _first_label(labels, _is_left_foot)
     right = _first_label(labels, _is_right_foot)
+    lumbar = _first_label(labels, _is_lumbar)
+
+    figures: List[FigureSpec] = []
+
+    # --- Figure: raw_all (always) --------------------------------------------
+    # Raw IMU for every sensor, one subplot each. sensors=None means "all".
+    figures.append(FigureSpec(
+        role=ROLE_RAW_ALL,
+        title="Raw IMU (all sensors)",
+        signal_modalities=RAW_IMU_MODALITIES,
+        sensors=None,
+    ))
+
+    # --- Figure: feet (walking gait with both feet) --------------------------
+    # Two foot subplots with the stride/swing bands overlaid. Only when the
+    # session actually has a GAIT_SEGMENTS file and both feet.
     if has_gait_segments and left and right:
         figures.append(FigureSpec(
             role=ROLE_FEET,
@@ -200,7 +234,11 @@ def figures_for(session: "Session") -> List[FigureSpec]:
             sensors=[left, right],
         ))
 
-    lumbar = _first_label(labels, _is_lumbar)
+    # --- Figure: lumbar (processed session with a trunk sensor) --------------
+    # A dedicated lumbar subplot. Scoped to processed sessions so a raw
+    # app-sensor capture returns just [raw_all] (its "Back" sensor already
+    # shows in raw_all). Change `is_processed and lumbar` to `lumbar` to always
+    # add it.
     if is_processed and lumbar:
         figures.append(FigureSpec(
             role=ROLE_LUMBAR,
@@ -208,6 +246,10 @@ def figures_for(session: "Session") -> List[FigureSpec]:
             signal_modalities=RAW_IMU_MODALITIES,
             sensors=[lumbar],
         ))
+
+    # --- Add your own figure here --------------------------------------------
+    # figures.append(FigureSpec("my_view", "My view", RAW_IMU_MODALITIES,
+    #                           sensors=[some_label]))
 
     return figures
 

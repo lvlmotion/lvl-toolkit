@@ -15,14 +15,7 @@ pip install -e .          # from a checkout
 # pip install lvl-toolkit
 ```
 
-Or create a conda environment (installs the deps and the package in editable mode):
-
-```bash
-conda env create -f environment.yml
-conda activate lvl-toolkit
-```
-
-Requires Python 3.9+, `numpy`, and `pandas`.
+Requires Python 3.9+, `numpy`, `pandas`, and `matplotlib` (graphing).
 
 ## Quick start
 
@@ -112,6 +105,44 @@ produces without you caring which is which:
 `LoadedFile.sensor_label` is whatever the capture named the sensor, kept
 verbatim (`"Left Foot"`, `"Back"`, `"LEFT_FOOT"`, ...) — or `""` if it was never
 named. It is never a `shortMac` substitute; an address is not a location.
+
+## Graphing
+
+Load a session and graph it in two lines — the "run a collection, see your data"
+path:
+
+```python
+from lvl_toolkit import load_session
+from lvl_toolkit.graphing import render_session
+
+session = load_session("path/to/session")
+for spec, fig in render_session(session):     # figures chosen by the default schema
+    fig.savefig(f"{spec.role}.png")
+```
+
+`render_session` draws the figures a **schema** asks for. The default schema
+(`lvl_toolkit.activity_map.figures_for`) gives sensible defaults out of the box:
+raw IMU for every sensor, a feet stride/swing view for walking-gait sessions, and
+a lumbar subplot when present.
+
+### Bring your own schema
+
+A schema is just a `session -> list[FigureSpec]` callable, so you reuse the whole
+renderer (colors, overlays, layout) and only decide *which* figures appear. Copy
+`activity_map.py`, change the rules, and pass it in:
+
+```python
+from lvl_toolkit.activity_map import FigureSpec, RAW_IMU_MODALITIES
+from lvl_toolkit.graphing import render_session
+
+def my_figures_for(session):
+    return [FigureSpec("raw_all", "Raw IMU", RAW_IMU_MODALITIES)]
+
+render_session(session, schema=my_figures_for)
+```
+
+See `activity_map.py` for the field-by-field walkthrough and a worked custom
+example. `examples/run.py` graphs the two bundled samples end-to-end.
 
 ## Typed CSV containers
 
