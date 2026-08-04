@@ -3,7 +3,7 @@
 This is the public, generic rendering layer: give it a session and it draws the
 figures a schema asks for. It is deliberately schema-*driven*, not
 schema-*specific* -- :func:`render_session` takes the schema as an argument
-(defaulting to :func:`lvl_toolkit.activity_map.figures_for`), so the same
+(defaulting to :func:`lvl_toolkit.graphing_schema.figures_for`), so the same
 renderer serves three audiences:
 
 - **researchers** who just want graphs of a capture they collected -- call
@@ -26,8 +26,7 @@ from typing import Callable, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from .activity_map import FigureSpec, figures_for, sensor_role
-
+from .graphing_schema import FigureSpec, figures_for, sensor_role
 
 # --------------------------------------------------------------------------- #
 # Colors  (a rendering choice -- lives here, not in the schema)

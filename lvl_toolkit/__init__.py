@@ -20,7 +20,7 @@ from .csv_io import (
     SegmentDataContainer,
     Segment,
 )
-from .activity_map import (
+from .graphing_schema import (
     FigureSpec,
     figures_for,
     PLOT_ROLES,

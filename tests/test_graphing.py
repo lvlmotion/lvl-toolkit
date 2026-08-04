@@ -8,7 +8,7 @@ matplotlib.use("Agg")                       # headless: never open a window
 import matplotlib.pyplot as plt
 
 from lvl_toolkit import load_session
-from lvl_toolkit.activity_map import FigureSpec, RAW_IMU_MODALITIES
+from lvl_toolkit.graphing_schema import FigureSpec, RAW_IMU_MODALITIES
 from lvl_toolkit.graphing import render_session, segment_color, sensor_color
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
