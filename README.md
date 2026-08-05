@@ -163,6 +163,44 @@ dc.load_from_csv("imu-left foot-78b3.csv")   # or accel_gyro-filtered-3484-left_
 time_us, accel, gyro = dc.to_numpy()         # each accel/gyro is (n, 3)
 ```
 
+## Vicon sync
+
+`lvl_toolkit.vicon` aligns a Level IMU capture with Vicon Nexus motion capture.
+It installs four console scripts:
+
+| command | what it does |
+|---|---|
+| `lvl-vicon-bridge` | Log Vicon DataStream frames to a long-format CSV (one row per frame·marker) with a PC-wallclock timestamp. Runs on the Vicon PC. |
+| `lvl-vicon-merge` | Join a Level IMU session with a Vicon CSV into one merged dataset. |
+| `lvl-vicon-pull` | Pull an IMU session off an Android device over `adb` (the phone path). |
+| `lvl-vicon-clocksync` | Record the phone↔PC clock offset for the phone path. |
+
+Two capture topologies, and `merge` handles both:
+
+- **Desktop rig** (`--shared-clock`): the IMU recorder and `lvl-vicon-bridge`
+  run on the *same* Vicon PC, so IMU microseconds and Vicon frame stamps are
+  already one wallclock — no clock correction needed.
+- **Phone path**: phone and Vicon PC are two clocks. `lvl-vicon-clocksync`
+  measures the offset (via `adb`) at the start and end of a session, and
+  `merge` linearly interpolates it across the recording.
+
+```bash
+# Desktop rig: IMU is a Level session folder, Vicon is bridge.py's CSV.
+lvl-vicon-merge --shared-clock \
+    --imu-session path/to/2026-05-12_10-03-40-BTIMU_RAW-run01 \
+    --sensor-label "Right Foot" \
+    --vicon vicon_run01.csv \
+    --output merged/run01.csv
+```
+
+The IMU side is read through `load_session`, so the manifest, rotations and
+sensor labels are handled for you. `merge` also runs a heel-strike
+cross-correlation as an independent check on the alignment and flags the session
+if it disagrees with the clock estimate by more than 50 ms.
+
+`lvl-vicon-bridge` additionally requires `vicon_dssdk`, which ships with the
+Vicon DataStream SDK installer (not on PyPI); the other three tools don't.
+
 ## Scope
 
 This version is **manifest-first**: it loads sessions that contain a

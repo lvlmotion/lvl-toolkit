@@ -18,6 +18,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 
+[project.scripts]
+lvl-vicon-merge = "lvl_toolkit.vicon.merge:main"
+lvl-vicon-bridge = "lvl_toolkit.vicon.bridge:main"
+lvl-vicon-pull = "lvl_toolkit.vicon.pull_imu:main"
+lvl-vicon-clocksync = "lvl_toolkit.vicon.clock_sync:main"
+
 [project.urls]
 Repository = "https://github.com/lvlmotion/lvl-toolkit"
 
