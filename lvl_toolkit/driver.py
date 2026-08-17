@@ -8,9 +8,7 @@ root). Each just wires :mod:`lvl_toolkit.session` (the loader) to
 :func:`lvl_toolkit.graphing_schema.figures_for`).
 
 Thin scripts sit on top of these -- see ``examples/run.py`` (calls
-:func:`plot_all_sessions` on the bundled example folder) and
-``lvl_toolkit/vicon/run_receiver.py`` (calls :func:`plot_session` on the one
-folder app-sensor-desktop hands it).
+:func:`plot_all_sessions` on the bundled example folder).
 """
 
 from typing import Callable, List

@@ -7,7 +7,7 @@ just a plain callable.
 from pathlib import Path
 
 from lvl_toolkit import load_session
-from lvl_toolkit.activity_map import figures_for, FigureSpec, sensor_role, GAIT_SEGMENTS_MODALITY
+from lvl_toolkit.graphing_schema import figures_for, FigureSpec, sensor_role, GAIT_SEGMENTS_MODALITY
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
 RAW = EXAMPLES / "app_sensor_raw_3sensor"

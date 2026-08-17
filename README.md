@@ -165,27 +165,28 @@ time_us, accel, gyro = dc.to_numpy()         # each accel/gyro is (n, 3)
 
 ## Vicon sync
 
-`lvl_toolkit.vicon` aligns a Level IMU capture with Vicon Nexus motion capture.
-It installs four console scripts:
+`lvl_toolkit.vicon` aligns a Level IMU capture with Vicon Nexus motion capture,
+working on the files a Level collection produces (the IMU session folder plus a
+Vicon frames CSV the desktop app logs during capture). It installs three console
+scripts:
 
 | command | what it does |
 |---|---|
-| `lvl-vicon-bridge` | Log Vicon DataStream frames to a long-format CSV (one row per frame·marker) with a PC-wallclock timestamp. Runs on the Vicon PC. |
-| `lvl-vicon-merge` | Join a Level IMU session with a Vicon CSV into one merged dataset. |
+| `lvl-vicon-merge` | Join a Level IMU session with the Vicon CSV into one merged dataset. |
 | `lvl-vicon-pull` | Pull an IMU session off an Android device over `adb` (the phone path). |
 | `lvl-vicon-clocksync` | Record the phone↔PC clock offset for the phone path. |
 
 Two capture topologies, and `merge` handles both:
 
-- **Desktop rig** (`--shared-clock`): the IMU recorder and `lvl-vicon-bridge`
-  run on the *same* Vicon PC, so IMU microseconds and Vicon frame stamps are
-  already one wallclock — no clock correction needed.
+- **Desktop rig** (`--shared-clock`): the IMU recorder and the Vicon logger run
+  on the *same* PC, so IMU microseconds and Vicon frame stamps are already one
+  wallclock — no clock correction needed.
 - **Phone path**: phone and Vicon PC are two clocks. `lvl-vicon-clocksync`
   measures the offset (via `adb`) at the start and end of a session, and
   `merge` linearly interpolates it across the recording.
 
 ```bash
-# Desktop rig: IMU is a Level session folder, Vicon is bridge.py's CSV.
+# Desktop rig: IMU is a Level session folder, Vicon is the frames CSV.
 lvl-vicon-merge --shared-clock \
     --imu-session path/to/2026-05-12_10-03-40-BTIMU_RAW-run01 \
     --sensor-label "Right Foot" \
@@ -196,10 +197,8 @@ lvl-vicon-merge --shared-clock \
 The IMU side is read through `load_session`, so the manifest, rotations and
 sensor labels are handled for you. `merge` also runs a heel-strike
 cross-correlation as an independent check on the alignment and flags the session
-if it disagrees with the clock estimate by more than 50 ms.
-
-`lvl-vicon-bridge` additionally requires `vicon_dssdk`, which ships with the
-Vicon DataStream SDK installer (not on PyPI); the other three tools don't.
+if it disagrees with the clock estimate by more than 50 ms. See
+[`lvl_toolkit/vicon/README.md`](lvl_toolkit/vicon/README.md) for the full guide.
 
 ## Scope
 

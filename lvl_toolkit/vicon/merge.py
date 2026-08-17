@@ -363,7 +363,7 @@ def main():
     parser.add_argument("--sensor-label", default=None,
                         help="With --imu-session: which sensor to use when several are present, "
                              "e.g. \"Right Foot\".")
-    parser.add_argument("--vicon", type=Path, required=True, help="Vicon CSV from bridge.py.")
+    parser.add_argument("--vicon", type=Path, required=True, help="Vicon frames CSV written during collection.")
     parser.add_argument("--offset", type=Path, required=False, default=None,
                         help="clock_offset.json (android two-clock path). "
                              "Required unless --shared-clock.")

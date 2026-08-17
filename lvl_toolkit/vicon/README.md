@@ -4,17 +4,18 @@ Tools for aligning a Level IMU capture with Vicon Nexus motion capture. The
 question this subpackage answers is *"which sample lines up with which mocap
 frame?"* — and the answer depends on **how many clocks are in play**.
 
-## The four tools
+These tools work on the files a Level collection produces. During capture the
+Level desktop app logs the Vicon DataStream frames to a long-format CSV (one row
+per frame·marker, with a PC-wallclock timestamp on each frame) alongside the IMU
+session; the commands below take those two artifacts and merge them.
+
+## The three tools
 
 | command | role |
 |---|---|
-| `lvl-vicon-bridge` | Log Vicon DataStream frames to a long-format CSV (one row per frame·marker) with a PC-wallclock timestamp on each frame. Runs on the Vicon PC. |
-| `lvl-vicon-merge` | Join a Level IMU session with a Vicon CSV into one merged dataset. Handles both sync modes below. |
+| `lvl-vicon-merge` | Join a Level IMU session with the Vicon CSV into one merged dataset. Handles both sync modes below. |
 | `lvl-vicon-clocksync` | Measure the phone↔PC clock offset over `adb` (two-clock mode only). |
 | `lvl-vicon-pull` | Pull an IMU session off an Android device over `adb` (two-clock mode only). |
-
-`lvl-vicon-bridge` needs `vicon_dssdk` (ships with the Vicon DataStream SDK
-installer; not on PyPI). The other three don't.
 
 ---
 
@@ -25,21 +26,19 @@ clocks the IMU and Vicon timestamps live on.
 
 ### 1. Desktop rig — one clock (`--shared-clock`)
 
-The IMU recorder (`app-sensor-desktop`) **and** `lvl-vicon-bridge` run on the
-**same Vicon PC**. The IMU's absolute-microsecond `time` and the Vicon frame
-stamps (`time.time_ns()` on that PC) are therefore the *same wallclock* — there
-is nothing to correct. `merge` joins them directly.
+The IMU recorder and the Vicon logger both run on the **same Vicon PC**, so the
+IMU's absolute-microsecond `time` and the Vicon frame stamps are the *same
+wallclock* — there is nothing to correct. `merge` joins them directly.
 
 ```
 ┌───────────────── Vicon PC ─────────────────┐
-│  app-sensor-desktop  ──►  IMU session CSVs  │   one wallclock
-│  lvl-vicon-bridge    ──►  vicon_run01.csv   │   shared by both
+│  IMU session CSVs                           │   one wallclock
+│  vicon_run01.csv                            │   shared by both
 └─────────────────────────────────────────────┘
 ```
 
 ```bash
-# capture, then merge on the shared clock (no offset):
-lvl-vicon-bridge --session-id run01           # logs Vicon frames while you capture
+# merge on the shared clock (no offset):
 lvl-vicon-merge --shared-clock \
     --imu-session path/to/2026-05-12_..._BTIMU_RAW-run01 \
     --sensor-label "Right Foot" \
@@ -47,20 +46,18 @@ lvl-vicon-merge --shared-clock \
     --output merged/run01.csv
 ```
 
-This is the preferred mode: fewer moving parts, no clock estimation, and on a
-single machine the Nexus UDP trigger can start/stop the IMU recorder per trial
-so capture is hands-off.
+This is the preferred mode: fewer moving parts and no clock estimation.
 
 ### 2. Android phone — two clocks (`--offset`)
 
-The IMU records on a **phone**, off-machine, while `lvl-vicon-bridge` records on
+The IMU records on a **phone**, off-machine, while the Vicon frames are logged on
 the Vicon PC. Now there are **two independent clocks** that drift relative to
 each other, so the phone timestamps must be mapped onto the PC clock before the
 join.
 
 ```
 ┌── phone ──┐          ┌──────── Vicon PC ────────┐
-│ IMU CSVs  │  adb ──► │ lvl-vicon-bridge ► vicon  │   two clocks,
+│ IMU CSVs  │  adb ──► │ vicon_run01.csv           │   two clocks,
 │ (clock A) │          │ clock B                   │   bridged by adb offset
 └───────────┘          └───────────────────────────┘
 ```
@@ -73,7 +70,6 @@ recording (clocks drift, so a single measurement isn't enough).
 ```bash
 # on the Vicon PC:
 lvl-vicon-clocksync --start --session-id run01     # first offset anchor
-lvl-vicon-bridge --session-id run01                # capture...
 lvl-vicon-clocksync --end   --session-id run01     # second offset anchor
 
 # pull the IMU session off the phone, then merge with the interpolated offset:
@@ -85,10 +81,8 @@ lvl-vicon-merge \
     --output merged/run01.csv
 ```
 
-Because there's no cross-machine trigger (a phone can't be counted on to receive
-Nexus's UDP), the phone recording is **started manually and bracketed** around
-each trial — the adb offset plus the heel-strike check below carry the sync,
-rather than a frame-accurate trigger.
+The phone recording is **started manually and bracketed** around each trial —
+the adb offset plus the heel-strike check below carry the sync.
 
 ---
 
